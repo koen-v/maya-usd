@@ -15,7 +15,7 @@
 //
 #pragma once
 
-#include "UsdValueUndoableCommandBase.h"
+#include "UsdValueUndoableCommand.h"
 
 #include <mayaUsd/base/api.h>
 #include <mayaUsd/undo/UsdUndoableItem.h>
@@ -33,8 +33,7 @@ namespace ufe {
 // Templated helper class to factor out common code for setting USD values.
 // Supports repeated calls to the set() method, invoked during direct
 // manipulation.
-template <typename Cmd>
-class UsdXformOpUndoableCommandBase : public UsdValueUndoableCommandBase<Cmd>
+template <typename Cmd> class UsdXformOpUndoableCommand : public UsdValueUndoableCommand<Cmd>
 {
 public:
 #if UFE_PREVIEW_VERSION_NUM >= 2031
@@ -44,65 +43,45 @@ public:
 #endif
     using OpFunc = std::function<UsdGeomXformOp(const BaseUndoableCommand&)>;
 
-    UsdXformOpUndoableCommandBase(
+    UsdXformOpUndoableCommand(
         const VtValue&     newOpValue,
         const Ufe::Path&   path,
         OpFunc             opFunc,
-        const UsdTimeCode& writeTime);
+        const UsdTimeCode& writeTime)
+        : UsdValueUndoableCommand<Cmd>(newOpValue, path, writeTime)
+        , _op()
+        , _opFunc(std::move(opFunc))
+    {
+    }
 
-    UsdXformOpUndoableCommandBase(
+    UsdXformOpUndoableCommand(
         const VtValue&        newOpValue,
         const Ufe::Path&      path,
         const UsdGeomXformOp& op,
-        const UsdTimeCode&    writeTime);
+        const UsdTimeCode&    writeTime)
+        : UsdValueUndoableCommand<Cmd>(newOpValue, path, writeTime)
+        , _op(op)
+        , _opFunc()
+    {
+    }
 
 protected:
-    using State = typename UsdValueUndoableCommandBase<Cmd>::State;
+    using State = typename UsdValueUndoableCommand<Cmd>::State;
 
     // Engine method for derived classes implementing their set() method.
-    void handleSet(State previousState, State newState, const VtValue& v) override;
+    void handleSet(const VtValue& v) override
+    {
+        // Only need to initialize the transform operation on the first execution.
+        if (_state == State::Initial && _opFunc)
+            _op = _opFunc(*this);
+
+        _op.GetAttr().Set(v, writeTime());
+    }
 
 private:
     UsdGeomXformOp _op;
     OpFunc         _opFunc;
 };
-
-// Implementation of the set-value command base class.
-
-template <typename Cmd>
-inline UsdXformOpUndoableCommandBase<Cmd>::UsdXformOpUndoableCommandBase(
-    const VtValue&        newOpValue,
-    const Ufe::Path&      path,
-    const UsdGeomXformOp& op,
-    const UsdTimeCode&    writeTime)
-    : UsdValueUndoableCommandBase<Cmd>(newOpValue, path, writeTime)
-    , _op(op)
-    , _opFunc()
-{
-}
-
-template <typename Cmd>
-inline UsdXformOpUndoableCommandBase<Cmd>::UsdXformOpUndoableCommandBase(
-    const VtValue&     newOpValue,
-    const Ufe::Path&   path,
-    OpFunc             opFunc,
-    const UsdTimeCode& writeTime)
-    : UsdValueUndoableCommandBase<Cmd>(newOpValue, path, writeTime)
-    , _op()
-    , _opFunc(std::move(opFunc))
-{
-}
-
-template <typename Cmd>
-inline void
-UsdXformOpUndoableCommandBase<Cmd>::handleSet(State previousState, State newState, const VtValue& v)
-{
-    // Only need to initialize the transform operation on the first execution.
-    if (previousState == State::Initial && _opFunc)
-        _op = _opFunc(*this);
-
-    _op.GetAttr().Set(v, writeTime());
-}
 
 } // namespace ufe
 } // namespace MAYAUSD_NS_DEF

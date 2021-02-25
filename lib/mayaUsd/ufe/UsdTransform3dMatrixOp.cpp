@@ -17,7 +17,7 @@
 
 #include <mayaUsd/ufe/UsdSceneItem.h>
 #include <mayaUsd/ufe/UsdTransform3dSetObjectMatrix.h>
-#include <mayaUsd/ufe/UsdXformOpUndoableCommandBase.h>
+#include <mayaUsd/ufe/UsdXformOpUndoableCommand.h>
 #include <mayaUsd/ufe/Utils.h>
 #include <mayaUsd/ufe/XformOpUtils.h>
 
@@ -139,14 +139,14 @@ GfMatrix4d xformInv(
 }
 
 // Class for setMatrixCmd() implementation.
-class UsdSetMatrix4dUndoableCmd : public UsdValueUndoableCommandBase<Ufe::SetMatrix4dUndoableCommand>
+class UsdSetMatrix4dUndoableCmd : public UsdValueUndoableCommand<Ufe::SetMatrix4dUndoableCommand>
 {
 public:
     UsdSetMatrix4dUndoableCmd(
         const Ufe::Matrix4d& newM,
         const Ufe::Path&     path,
         const UsdTimeCode&   writeTime)
-        : UsdValueUndoableCommandBase<Ufe::SetMatrix4dUndoableCommand>(
+        : UsdValueUndoableCommand<Ufe::SetMatrix4dUndoableCommand>(
             VtValue(newM),
             path,
             writeTime)
@@ -162,7 +162,7 @@ public:
         return true;
     }
 
-    void handleSet(State previousState, State newState, const VtValue& v) override
+    void handleSet(const VtValue& v) override
     {
         // Use editTransform3d() to set a single matrix transform op.
         // transform3d() returns a whole-object interface, which may include
@@ -175,7 +175,7 @@ public:
 
 // Command to set the translation on a scene item by setting a matrix transform
 // op at an arbitrary position in the transform op stack.
-class UsdTRSUndoableCmdBase : public UsdXformOpUndoableCommandBase<Ufe::SetVector3dUndoableCommand>
+class UsdTRSUndoableCmdBase : public UsdXformOpUndoableCommand<Ufe::SetVector3dUndoableCommand>
 {
 public:
 #ifdef UFE_V2_FEATURES_AVAILABLE
@@ -183,7 +183,7 @@ public:
         const Ufe::Path&      path,
         const UsdGeomXformOp& op,
         const UsdTimeCode&    writeTime)
-        : UsdXformOpUndoableCommandBase<Ufe::SetVector3dUndoableCommand>(
+        : UsdXformOpUndoableCommand<Ufe::SetVector3dUndoableCommand>(
             getValue(op.GetAttr(), getTime(path)),
             path,
             op,
@@ -193,7 +193,7 @@ public:
         const UsdSceneItem::Ptr& item,
         const UsdGeomXformOp&    op,
         const UsdTimeCode&       writeTime)
-        : UsdXformOpUndoableCommandBase<Ufe::SetVector3dUndoableCommand>(
+        : UsdXformOpUndoableCommand<Ufe::SetVector3dUndoableCommand>(
             getValue(op.GetAttr(), getTime(item->path())),
             item->path(),
             op,

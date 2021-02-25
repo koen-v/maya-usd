@@ -110,15 +110,16 @@ if(CMAKE_UFE_V2_FEATURES_AVAILABLE)
         UsdTransform3dMayaXformStack.h
         UsdTransform3dSetObjectMatrix.h
         UsdUIInfoHandler.h
-        UsdUndoableCommandBase.h
+        UsdUndoableCommand.h
+        UsdUndoableInteractiveCommand.h
         UsdUndoAddNewPrimCommand.h
         UsdUndoCreateGroupCommand.h
         UsdUndoInsertChildCommand.h
         UsdUndoReorderCommand.h
         UsdUndoSetKindCommand.h
         UsdUndoVisibleCommand.h
-        UsdValueUndoableCommandBase.h
-        UsdXformOpUndoableCommandBase.h
+        UsdValueUndoableCommand.h
+        UsdXformOpUndoableCommand.h
         XformOpUtils.h
     )
     # Why no if for UsdUIInfoHandler.h ?

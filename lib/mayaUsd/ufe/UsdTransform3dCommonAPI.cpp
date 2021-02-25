@@ -15,7 +15,7 @@
 //
 #include "UsdTransform3dCommonAPI.h"
 
-#include <mayaUsd/ufe/UsdValueUndoableCommandBase.h>
+#include <mayaUsd/ufe/UsdValueUndoableCommand.h>
 #include <mayaUsd/ufe/Utils.h>
 
 #include <pxr/usd/usdGeom/xformCache.h>
@@ -84,14 +84,14 @@ GfVec3d extractPivot(const UsdSceneItem::Ptr& item, const UsdTimeCode& time)
 //
 // Only the handleSet() function, which sets the correct part of the transform
 // is done in the sub-classes.
-class UsdTRSUndoableCmdBase : public UsdValueUndoableCommandBase<Ufe::SetVector3dUndoableCommand>
+class UsdTRSUndoableCmdBase : public UsdValueUndoableCommand<Ufe::SetVector3dUndoableCommand>
 {
 public:
     UsdTRSUndoableCmdBase(
         const GfVec3d&           value,
         const UsdSceneItem::Ptr& item,
         const UsdTimeCode&       time)
-        : UsdValueUndoableCommandBase<Ufe::SetVector3dUndoableCommand>(
+        : UsdValueUndoableCommand<Ufe::SetVector3dUndoableCommand>(
             VtValue(value),
             item->path(),
             time)
@@ -103,7 +103,7 @@ public:
         const GfVec3f&           value,
         const UsdSceneItem::Ptr& item,
         const UsdTimeCode&       time)
-        : UsdValueUndoableCommandBase<Ufe::SetVector3dUndoableCommand>(
+        : UsdValueUndoableCommand<Ufe::SetVector3dUndoableCommand>(
             VtValue(value),
             item->path(),
             time)
@@ -132,7 +132,7 @@ public:
     {
     }
 
-    void handleSet(State previousState, State newState, const VtValue& v) override
+    void handleSet(const VtValue& v) override
     {
         const GfVec3d t(v.Get<GfVec3d>());
         _commonAPI.SetTranslate(t, writeTime());
@@ -147,7 +147,7 @@ public:
     {
     }
 
-    void handleSet(State previousState, State newState, const VtValue& v) override
+    void handleSet(const VtValue& v) override
     {
         // Note: rotations are kept as float in common API.
         const GfVec3f r(v.Get<GfVec3d>());
@@ -163,7 +163,7 @@ public:
     {
     }
 
-    void handleSet(State previousState, State newState, const VtValue& v) override
+    void handleSet(const VtValue& v) override
     {
         // Note: scales are kept as float in common API.
         const GfVec3f s(v.Get<GfVec3d>());
@@ -179,7 +179,7 @@ public:
     {
     }
 
-    void handleSet(State previousState, State newState, const VtValue& v) override
+    void handleSet(const VtValue& v) override
     {
         // Note: pivot are kept as float in common API.
         const GfVec3f pvt(v.Get<GfVec3d>());

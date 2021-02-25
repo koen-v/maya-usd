@@ -15,7 +15,7 @@
 //
 #pragma once
 
-#include "UsdUndoableCommandBase.h"
+#include "UsdUndoableInteractiveCommand.h"
 
 #include <pxr/base/vt/value.h>
 #include <pxr/usd/usdGeom/xformOp.h>
@@ -42,76 +42,46 @@ namespace ufe {
 // A typical set() implementation should call setNewValue() with the
 // new value and then execute() to actually set the value on the USD
 // attribute.
-template <typename Cmd> class UsdValueUndoableCommandBase : public UsdUndoableCommandBase<Cmd>
+template <typename Cmd> class UsdValueUndoableCommand : public UsdUndoableInteractiveCommand<Cmd>
 {
 public:
-    using BaseClass = UsdUndoableCommandBase<Cmd>;
+    using BaseClass = UsdUndoableInteractiveCommand<Cmd>;
 
-    UsdValueUndoableCommandBase(
+    UsdValueUndoableCommand(
         const VtValue&     newOpValue,
         const Ufe::Path&   path,
-        const UsdTimeCode& writeTime_);
+        const UsdTimeCode& writeTime_)
+        : BaseClass(path)
+        // Always read from proxy shape time.
+        , _readTime(getTime(path))
+        , _writeTime(writeTime_)
+        , _newValue(newOpValue)
+    {
+    }
 
-    UsdTimeCode readTime() const;
-    UsdTimeCode writeTime() const;
+    UsdTimeCode readTime() const { return _readTime; }
+
+    UsdTimeCode writeTime() const { return _writeTime; }
 
 protected:
     // Update the new value that will be set by execute().
-    void setNewValue(const VtValue& v);
+    void setNewValue(const VtValue& v) { _newValue = v; }
 
     // Concrete implementation of execute, undo and redo.
     //
     // Execute creates an undo block with the undoable item and calls handleSet().
-    void executeImpl(State previousState, State newState) override;
+    void executeUndoBlock() override { handleSet(_newValue); }
 
     // Overridable method for derived classes to actually set the value on
     // the USD attribute. The handleSet() call will be within a USD undo block
     // as necessary. You don't need to declare such a block.
-    //
-    // We provide the previous and new state in case they need to take special
-    // actions on a given transition.
-    virtual void handleSet(State prevState, State newState, const VtValue& v) = 0;
+    virtual void handleSet(const VtValue& v) = 0;
 
 private:
     const UsdTimeCode _readTime;
     const UsdTimeCode _writeTime;
     VtValue           _newValue;
 };
-
-// Implementation of the command base class.
-
-template <typename Cmd>
-inline UsdValueUndoableCommandBase<Cmd>::UsdValueUndoableCommandBase(
-    const VtValue&     newOpValue,
-    const Ufe::Path&   path,
-    const UsdTimeCode& writeTime_)
-    : BaseClass(path)
-    // Always read from proxy shape time.
-    , _readTime(getTime(path))
-    , _writeTime(writeTime_)
-    , _newValue(newOpValue)
-{
-}
-
-template <typename Cmd> inline void UsdValueUndoableCommandBase<Cmd>::executeImpl(State prevState, State newState)
-{
-    handleSet(prevState, newState, _newValue);
-}
-
-template <typename Cmd> inline void UsdValueUndoableCommandBase<Cmd>::setNewValue(const VtValue& v)
-{
-    _newValue = v;
-}
-
-template <typename Cmd> inline UsdTimeCode UsdValueUndoableCommandBase<Cmd>::readTime() const
-{
-    return _readTime;
-}
-
-template <typename Cmd> inline UsdTimeCode UsdValueUndoableCommandBase<Cmd>::writeTime() const
-{
-    return _writeTime;
-}
 
 } // namespace ufe
 } // namespace MAYAUSD_NS_DEF

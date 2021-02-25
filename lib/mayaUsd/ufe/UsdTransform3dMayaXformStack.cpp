@@ -19,7 +19,7 @@
 
 #include <mayaUsd/fileio/utils/xformStack.h>
 #include <mayaUsd/ufe/RotationUtils.h>
-#include <mayaUsd/ufe/UsdXformOpUndoableCommandBase.h>
+#include <mayaUsd/ufe/UsdXformOpUndoableCommand.h>
 #include <mayaUsd/ufe/Utils.h>
 
 #include <maya/MEulerRotation.h>
@@ -163,14 +163,14 @@ createTransform3d(const Ufe::SceneItem::Ptr& item, NextTransform3dFn nextTransfo
 
 // Class for setMatrixCmd() implementation.
 class UsdSetMatrix4dUndoableCmd
-    : public UsdValueUndoableCommandBase<Ufe::SetMatrix4dUndoableCommand>
+    : public UsdValueUndoableCommand<Ufe::SetMatrix4dUndoableCommand>
 {
 public:
     UsdSetMatrix4dUndoableCmd(
         const Ufe::Matrix4d& newM,
         const Ufe::Path&     path,
         const UsdTimeCode&   writeTime)
-        : UsdValueUndoableCommandBase<Ufe::SetMatrix4dUndoableCommand>(
+        : UsdValueUndoableCommand<Ufe::SetMatrix4dUndoableCommand>(
             VtValue(toMTransformationMatrix(newM)),
             path,
             writeTime)
@@ -184,7 +184,7 @@ public:
         return true;
     }
 
-    void handleSet(State previousState, State newState, const VtValue& v) override
+    void handleSet(const VtValue& v) override
     {
         const auto& xformM = v.Get<MTransformationMatrix>();
 
@@ -219,7 +219,7 @@ private:
     }
 };
 
-using UsdTRSUndoableCmdBase = UsdXformOpUndoableCommandBase<Ufe::SetVector3dUndoableCommand>;
+using UsdTRSUndoableCmdBase = UsdXformOpUndoableCommand<Ufe::SetVector3dUndoableCommand>;
 
 // UsdRotatePivotTranslateUndoableCmd uses hard-coded USD common transform API
 // single pivot attribute name, not reusable.
